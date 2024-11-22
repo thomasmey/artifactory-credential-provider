@@ -17,12 +17,19 @@ import (
 	cp "k8s.io/kubelet/pkg/apis/credentialprovider/v1"
 )
 
-// Fetches an ID token from the Google Cloud Metadata Server.
-// Parameters:
-// - audience: The intended recipient of the token.
-// - format: Token format ("full" for a standard JWT).
-// Returns the ID token or an error.
-func getIDToken(audience, format string) (string, error) {
+// Define an interface for ID token providers
+type IDTokenProvider interface {
+	// Fetches an ID token from the Google Cloud Metadata Server.
+	// Parameters:
+	// - audience: The intended recipient of the token.
+	// - format: Token format ("full" for a standard JWT).
+	// Returns the ID token or an error.
+	GetIDToken(audience, format string) (string, error)
+}
+
+type GoogleMetadataProvider struct{}
+
+func (g GoogleMetadataProvider) GetIDToken(audience, format string) (string, error) {
 	// Base URL for the Metadata Server
 	baseURL := "http://metadata/computeMetadata/v1/instance/service-accounts/default/identity"
 
@@ -163,22 +170,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	targetAudience := "ARTIFACTORY"
-	idToken, err := getIDToken(targetAudience, "full")
+	targetAudience := os.Getenv("TARGET_AUDIENCE") // ID token audience/target
+	artifactoryUrl := os.Getenv("ARTIFACTORY_URL")
+	artifactoryProviderName := os.Getenv("ARTIFACTORY_OIDC_PROVIDER")
+	artifactoryProjectKey := os.Getenv("ARTIFACTORY_PROJECT_KEY")
+
+	var idTokenProvider IDTokenProvider = GoogleMetadataProvider{}
+	idToken, err := idTokenProvider.GetIDToken(targetAudience, "full")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting id token: %v\n", err)
 		os.Exit(1)
 	}
 
 	jfrogCreds := JfrogCredentials{
-		JfrogURL: "https://your-jfrog-instance.jfrog.io", // Replace with your JFrog URL
+		JfrogURL: artifactoryUrl,
 	}
 
-	oidcProviderName := "YOUR_OIDC_PROVIDER" // Replace with your OIDC provider name
-	projectKey := "YOUR_PROJECT_KEY"         // Replace with your project key if applicable
-
 	// Call the function to exchange the token
-	accessToken, err := getJfrogAccessToken(jfrogCreds, idToken, oidcProviderName, projectKey)
+	accessToken, err := getJfrogAccessToken(jfrogCreds, idToken, artifactoryProviderName, artifactoryProjectKey)
 	if err != nil {
 		log.Fatalf("Failed to get JFrog access token: %v", err)
 	}
