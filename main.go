@@ -244,12 +244,12 @@ func main() {
 	idTokenTargetAudience := os.Getenv("ID_TOKEN_TARGET_AUDIENCE")
 	idTokenProvider, ok := os.LookupEnv("ID_TOKEN_PROVIDER")
 	if !ok {
-		idTokenProvider = "GCP"
+		idTokenProvider = "GCP-GCE"
 	}
 
 	var idp IDTokenProvider
 	switch idTokenProvider {
-	case "GCP": // or GCE? this implementation assumes GCE
+	case "GCP-GCE":
 		idp = GoogleMetadataProvider{}
 	case "GitHub":
 		idp = GithubActionsProvider{}

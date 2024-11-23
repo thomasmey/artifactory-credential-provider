@@ -7,6 +7,24 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      artifactoryUrl:
+        description: 'Artifactory URL'
+        required: true
+        type: string
+      artifactoryOidcProvider:
+        description: 'Artifactory OIDC provider name'
+        required: true
+        type: string
+      artifactoryProjectKey:
+        description: 'Artifactory project key'
+        required: true
+        type: string
+
+permissions:
+  id-token: write     # Allows workflows to request an OIDC token
+  contents: read      # Typically required for accessing repository content
 
 jobs:
   build:
@@ -35,4 +53,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: go-build
-          path: ./out 
+          path: ./out
+
+      - name: Test Integration
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          ID_TOKEN_PROVIDER=GitHub
+          ID_TOKEN_TARGET_AUDIENCE=artifactory-idp
+          ARTIFACTORY_URL="${{ github.event.inputs.artifactoryUrl }}"
+          ARTIFACTORY_OIDC_PROVIDER="${{ github.event.inputs.artifactoryOidcProvider }}"
+          ARTIFACTORY_PROJECT_KEY="${{ github.event.inputs.artifactoryProjectKey }}"
+          echo '{"apiVersion": "credentialprovider.kubelet.k8s.io/v1", "kind": "CredentialProviderRequest", "image": "example/image:latest"}' | ./out/artifactory-credential-provider
