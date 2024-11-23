@@ -77,7 +77,7 @@ func (g GoogleMetadataProvider) GetIDToken(audience, format string) (string, err
 
 type GithubActionsProvider struct{}
 
-func (provider *GithubActionsProvider) GetIDToken(audience, format string) (string, error) {
+func (provider GithubActionsProvider) GetIDToken(audience, format string) (string, error) {
 	if audience == "" {
 		return "", errors.New("audience parameter is required")
 	}
@@ -223,13 +223,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	targetAudience := os.Getenv("TARGET_AUDIENCE") // ID token audience/target
 	artifactoryUrl := os.Getenv("ARTIFACTORY_URL")
 	artifactoryProviderName := os.Getenv("ARTIFACTORY_OIDC_PROVIDER")
 	artifactoryProjectKey := os.Getenv("ARTIFACTORY_PROJECT_KEY")
 
-	var idTokenProvider IDTokenProvider = GoogleMetadataProvider{}
-	idToken, err := idTokenProvider.GetIDToken(targetAudience, "full")
+	idTokenTargetAudience := os.Getenv("ID_TOKEN_TARGET_AUDIENCE")
+	idTokenProvider, ok := os.LookupEnv("ID_TOKEN_PROVIDER")
+	if !ok {
+		idTokenProvider = "GCP"
+	}
+
+	var idp IDTokenProvider
+	switch idTokenProvider {
+	case "GCP": // or GCE? this implementation assumes GCE
+		idp = GoogleMetadataProvider{}
+	case "GitHub":
+		idp = GithubActionsProvider{}
+	default:
+		fmt.Fprintf(os.Stderr, "Unsupported id token provider: %s\n", idTokenProvider)
+		os.Exit(1)
+	}
+
+	idToken, err := idp.GetIDToken(idTokenTargetAudience, "full")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting id token: %v\n", err)
 		os.Exit(1)
