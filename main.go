@@ -83,6 +83,8 @@ type GithubIdTokenResponse struct {
 
 type GithubActionsProvider struct{}
 
+// https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect
+// https://token.actions.githubusercontent.com/.well-known/openid-configuration
 func (provider GithubActionsProvider) GetIDToken(audience, format string) (string, error) {
 	if audience == "" {
 		return "", errors.New("audience parameter is required")
@@ -96,7 +98,8 @@ func (provider GithubActionsProvider) GetIDToken(audience, format string) (strin
 	query.Set("audience", audience)
 
 	// Construct the final URL
-	fullURL := fmt.Sprintf("%s?%s", idpUrl, query.Encode())
+	// see https://github.com/actions/toolkit/blob/main/packages/core/src/oidc-utils.ts#L72
+	fullURL := fmt.Sprintf("%s&%s", idpUrl, query.Encode())
 
 	// Create HTTP request with appropriate headers
 	req, err := http.NewRequest("GET", fullURL, nil)
@@ -104,7 +107,7 @@ func (provider GithubActionsProvider) GetIDToken(audience, format string) (strin
 		return "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", "Bearer "+idpAccessToken)
+	req.Header.Set("Authorization", "Bearer " + idpAccessToken)
 
 	// Perform the HTTP request
 	client := &http.Client{}
