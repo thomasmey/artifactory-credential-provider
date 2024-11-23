@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -67,6 +69,50 @@ func (g GoogleMetadataProvider) GetIDToken(audience, format string) (string, err
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("error reading response: %w", err)
+	}
+
+	return string(body), nil
+}
+
+type GithubActionsProvider struct{}
+
+func (provider *GithubActionsProvider) GetIDToken(audience, format string) (string, error) {
+	if audience == "" {
+		return "", errors.New("audience parameter is required")
+	}
+
+	idpUrl := os.Getenv("ACTIONS_ID_TOKEN_REQUEST_URL")
+
+	// Prepare URL with query parameters
+	query := url.Values{}
+	query.Set("audience", audience)
+
+	// Construct the final URL
+	fullURL := fmt.Sprintf("%s?%s", idpUrl, query.Encode())
+
+	// Create HTTP request with appropriate headers
+	req, err := http.NewRequest("GET", fullURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create HTTP request: %v", err)
+	}
+
+	// Perform the HTTP request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch ID token: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Handle response
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	// Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %v", err)
 	}
 
 	return string(body), nil
