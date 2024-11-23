@@ -273,6 +273,10 @@ func main() {
 	expirationTime, _ := jwt.Claims.GetExpirationTime()
 	duration := expirationTime.Time.Sub(issuedAt.Time)
 
+	// TODO: set username to what? JWT sub?
+	// I need to see a real Jfrog token exchange token
+	username, _ := jwt.Claims.GetSubject()
+
 	response := cp.CredentialProviderResponse{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: cp.SchemeGroupVersion.String(),
@@ -284,7 +288,7 @@ func main() {
 		},
 		Auth: map[string]cp.AuthConfig{
 			request.Image: {
-				Username: "example-user", // TODO: set to what?
+				Username: username,
 				Password: accessToken,
 			},
 		},
