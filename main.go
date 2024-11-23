@@ -218,7 +218,7 @@ func main() {
 	}
 
 	// Check if Kind and APIVersion match certain values
-	if request.Kind != cp.SchemeGroupVersion.Group || request.APIVersion != cp.SchemeGroupVersion.Version {
+	if request.Kind != "CredentialProviderRequest" || request.APIVersion != cp.SchemeGroupVersion.String() {
 		fmt.Println("Unsupported API version!")
 		os.Exit(1)
 	}
@@ -260,8 +260,8 @@ func main() {
 
 	response := cp.CredentialProviderResponse{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: request.APIVersion,
-			Kind:       request.Kind,
+			APIVersion: cp.SchemeGroupVersion.String(),
+			Kind:       "CredentialProviderResponse",
 		},
 		CacheKeyType: cp.ImagePluginCacheKeyType,
 		CacheDuration: &metav1.Duration{
