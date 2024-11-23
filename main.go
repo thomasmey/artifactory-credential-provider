@@ -10,13 +10,14 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"net/http"
 	"net/url"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	cp "k8s.io/kubelet/pkg/apis/credentialprovider/v1"
+
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 // Define an interface for ID token providers
@@ -216,6 +217,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Check if Kind and APIVersion match certain values
+	if request.Kind != cp.SchemeGroupVersion.Group || request.APIVersion != cp.SchemeGroupVersion.Version {
+		fmt.Println("Unsupported API version!")
+		os.Exit(1)
+	}
+
 	targetAudience := os.Getenv("TARGET_AUDIENCE") // ID token audience/target
 	artifactoryUrl := os.Getenv("ARTIFACTORY_URL")
 	artifactoryProviderName := os.Getenv("ARTIFACTORY_OIDC_PROVIDER")
@@ -238,14 +245,27 @@ func main() {
 		log.Fatalf("Failed to get JFrog access token: %v", err)
 	}
 
+	jp := jwt.NewParser()
+	claims := jwt.RegisteredClaims{}
+	jwt, _, err := jp.ParseUnverified(accessToken, &claims)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing access token: %v\n", err)
+		os.Exit(1)
+	}
+
+	// TODO: Or use time.Now()?
+	issuedAt, _ := jwt.Claims.GetIssuedAt()
+	expirationTime, _ := jwt.Claims.GetExpirationTime()
+	duration := expirationTime.Time.Sub(issuedAt.Time)
+
 	response := cp.CredentialProviderResponse{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "credentialprovider.k8s.io/v1",
-			Kind:       "CredentialProviderResponse",
+			APIVersion: request.APIVersion,
+			Kind:       request.Kind,
 		},
 		CacheKeyType: cp.ImagePluginCacheKeyType,
 		CacheDuration: &metav1.Duration{
-			Duration: 10 * time.Minute, // TODO: deduce from access token
+			Duration: duration,
 		},
 		Auth: map[string]cp.AuthConfig{
 			request.Image: {
