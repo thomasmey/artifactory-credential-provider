@@ -32,6 +32,8 @@ type IDTokenProvider interface {
 
 type GoogleMetadataProvider struct{}
 
+// https://cloud.google.com/docs/authentication/get-id-token
+// https://cloud.google.com/compute/docs/instances/verifying-instance-identity#request_signature
 func (g GoogleMetadataProvider) GetIDToken(audience, format string) (string, error) {
 	// Base URL for the Metadata Server
 	baseURL := "http://metadata/computeMetadata/v1/instance/service-accounts/default/identity"
@@ -75,6 +77,10 @@ func (g GoogleMetadataProvider) GetIDToken(audience, format string) (string, err
 	return string(body), nil
 }
 
+type GithubIdTokenResponse struct {
+	Value string `json:"value"`
+}
+
 type GithubActionsProvider struct{}
 
 func (provider GithubActionsProvider) GetIDToken(audience, format string) (string, error) {
@@ -83,6 +89,7 @@ func (provider GithubActionsProvider) GetIDToken(audience, format string) (strin
 	}
 
 	idpUrl := os.Getenv("ACTIONS_ID_TOKEN_REQUEST_URL")
+	idpAccessToken := os.Getenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
 
 	// Prepare URL with query parameters
 	query := url.Values{}
@@ -96,6 +103,8 @@ func (provider GithubActionsProvider) GetIDToken(audience, format string) (strin
 	if err != nil {
 		return "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+idpAccessToken)
 
 	// Perform the HTTP request
 	client := &http.Client{}
@@ -116,7 +125,12 @@ func (provider GithubActionsProvider) GetIDToken(audience, format string) (strin
 		return "", fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	return string(body), nil
+	var response GithubIdTokenResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return "", fmt.Errorf("failed to parse response: %v", err)
+	}
+
+	return response.Value, nil
 }
 
 // JfrogCredentials holds JFrog connection details and the access token
