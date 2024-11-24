@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,6 +29,12 @@ type IDTokenProvider interface {
 	// - format: Token format ("full" for a standard JWT).
 	// Returns the ID token or an error.
 	GetIDToken(audience, format string) (string, error)
+}
+
+type EnvIDTokenProvider struct{}
+
+func (p EnvIDTokenProvider) GetIDToken(audience, format string) (string, error) {
+	return os.Getenv("ID_TOKEN"), nil
 }
 
 type GoogleMetadataProvider struct{}
@@ -107,7 +114,7 @@ func (provider GithubActionsProvider) GetIDToken(audience, format string) (strin
 		return "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", "Bearer " + idpAccessToken)
+	req.Header.Set("Authorization", "Bearer "+idpAccessToken)
 
 	// Perform the HTTP request
 	client := &http.Client{}
@@ -230,15 +237,14 @@ func main() {
 	decoder := json.NewDecoder(os.Stdin)
 	err := decoder.Decode(&request)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error decoding JSON: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("Error decoding JSON: %v\n", err)
 	}
 
 	// Check if Kind and APIVersion match certain values
 	if request.Kind != "CredentialProviderRequest" || request.APIVersion != cp.SchemeGroupVersion.String() {
-		fmt.Println("Unsupported API version!")
-		os.Exit(1)
+		log.Fatal("Unsupported API version:", request.APIVersion)
 	}
+	log.Print("Trying to get credentials for image:", request.Image)
 
 	artifactoryUrl := os.Getenv("ARTIFACTORY_URL")
 	artifactoryProviderName := os.Getenv("ARTIFACTORY_OIDC_PROVIDER")
@@ -256,16 +262,20 @@ func main() {
 		idp = GoogleMetadataProvider{}
 	case "GitHub":
 		idp = GithubActionsProvider{}
+	case "Env":
+		idp = EnvIDTokenProvider{}
 	default:
-		fmt.Fprintf(os.Stderr, "Unsupported id token provider: %s\n", idTokenProvider)
-		os.Exit(1)
+		log.Fatal("Unsupported id token provider:", idTokenProvider)
 	}
+	log.Print("Going to use id token provider:", idTokenProvider)
 
 	idToken, err := idp.GetIDToken(idTokenTargetAudience, "full")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting id token: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("Error getting id token: %v\n", err)
 	}
+	its := strings.Split(idToken, ".")
+	itp, _ := base64.StdEncoding.DecodeString(its[1])
+	log.Print("Got id token:", string(itp))
 
 	jfrogCreds := JfrogCredentials{
 		JfrogURL: artifactoryUrl,
@@ -276,14 +286,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to get JFrog access token: %v", err)
 	}
+	log.Print("Got an access token after token exchange")
 
 	jp := jwt.NewParser()
 	claims := jwt.RegisteredClaims{}
-	jwt, _, err := jp.ParseUnverified(accessToken, &claims)
+	jwt, jwtParts, err := jp.ParseUnverified(accessToken, &claims)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing access token: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("Error parsing access token: %v\n", err)
 	}
+	itp, _ = base64.StdEncoding.DecodeString(jwtParts[1])
+	log.Print("Using access token", string(itp))
 
 	// TODO: Or use time.Now()?
 	issuedAt, _ := jwt.Claims.GetIssuedAt()
@@ -314,8 +326,7 @@ func main() {
 	// Convert the response object to JSON
 	jsonData, err := json.Marshal(response)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error marshaling JSON: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("Error marshaling JSON: %v\n", err)
 	}
 
 	// Write the JSON to stdout
