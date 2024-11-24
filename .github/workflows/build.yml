@@ -35,6 +35,8 @@ jobs:
       - name: Debug Github Actions
         run: |
           curl -kv 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/' -H Metadata:true
+          curl -kv 'http://169.254.169.254/metadata/identity?api-version=2018-02-01' -H Metadata:true
+          curl -kv 'http://169.254.169.254/metadata/instance?api-version=2021-02-01' -H Metadata:true
 
       - name: Checkout Source Code
         uses: actions/checkout@v4
