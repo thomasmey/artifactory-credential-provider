@@ -235,8 +235,7 @@ func main() {
 
 	// Read input from stdin
 	decoder := json.NewDecoder(os.Stdin)
-	err := decoder.Decode(&request)
-	if err != nil {
+	if err := decoder.Decode(&request); err != nil {
 		log.Fatalf("Error decoding JSON: %v\n", err)
 	}
 
@@ -322,12 +321,8 @@ func main() {
 		},
 	}
 
-	// Convert the response object to JSON
-	jsonData, err := json.Marshal(response)
-	if err != nil {
+	je := json.NewEncoder(os.Stdout)
+	if err := je.Encode(response); err != nil {
 		log.Fatalf("Error marshaling JSON: %v\n", err)
 	}
-
-	// Write the JSON to stdout
-	fmt.Println(string(jsonData))
 }
