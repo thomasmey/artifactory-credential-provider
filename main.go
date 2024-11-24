@@ -277,11 +277,10 @@ func main() {
 	itp, _ := base64.StdEncoding.DecodeString(its[1])
 	log.Print("Got id token:", string(itp))
 
+	log.Print("Trying token exchange with ", artifactoryUrl)
 	jfrogCreds := JfrogCredentials{
 		JfrogURL: artifactoryUrl,
 	}
-
-	// Call the function to exchange the token
 	accessToken, err := getJfrogAccessToken(jfrogCreds, idToken, artifactoryProviderName, artifactoryProjectKey)
 	if err != nil {
 		log.Fatalf("Failed to get JFrog access token: %v", err)
