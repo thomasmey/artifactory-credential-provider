@@ -114,7 +114,7 @@ func getJfrogAccessToken(jfrogCredentials JfrogCredentials, jsonWebToken, oidcPr
 	return response.AccessToken, nil
 }
 
-func main() {	
+func main() {
 	// Create a new CredentialProviderRequest instance
 	var request cp.CredentialProviderRequest
 

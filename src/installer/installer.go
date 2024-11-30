@@ -13,8 +13,8 @@ import (
 	"strings"
 	"syscall"
 
-	"sigs.k8s.io/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	kcv1 "k8s.io/kubelet/config/v1"
 )
@@ -127,7 +127,7 @@ func install(cfgFilePath, execProviderPath string) {
 					// replace existing config with same name
 					cfg.Providers[i] = cfgAdd.Providers[0]
 					found = true
-					log.Print("Did modify existing image credential provider config for ", cfg.Providers[i].Name) 
+					log.Print("Did modify existing image credential provider config for ", cfg.Providers[i].Name)
 					break
 				}
 			}
@@ -155,7 +155,7 @@ func install(cfgFilePath, execProviderPath string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		
+
 		log.Print("Going to restart kubelet")
 		process, _ := os.FindProcess(kubeletPid)
 		process.Signal(syscall.SIGTERM)
