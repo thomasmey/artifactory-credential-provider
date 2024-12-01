@@ -20,23 +20,23 @@ import (
 )
 
 func main() {
-	var cfgFilePath = flag.String("config-file", "TODO", "Path to config yaml")
-	var execProviderPath = flag.String("provider-exec", "TODO", "Path to provider executable")
-	//var hostFsPath = flag.String("hostfs", "TODO", "Path to hostfs mount")
+	var cfgFilePath = flag.String("config-file", "/cfg/credential-provider.yaml", "Path to config yaml")
+	var execProviderPath = flag.String("provider-exec", "/bin/artifactory-credential-provider", "Path to provider executable")
+	var hostFsPath = flag.String("hostfs", "/host", "Path to hostfs mount")
 	flag.Parse()
 
 	log.Print("Install Mode - Try to install to node")
-	install(*cfgFilePath, *execProviderPath)
+	install(*cfgFilePath, *execProviderPath, *hostFsPath)
 }
 
-func install(cfgFilePath, execProviderPath string) {
+func install(cfgFilePath, execProviderPath, hostFsPath string) {
 
 	imageCredOptions := []string{"--image-credential-provider-config", "--image-credential-provider-bin-dir"}
 
 	foundOptions := make(map[string]string)
 	var kubeletPid int
 
-	procDir := "/proc"
+	procDir := filepath.Join(hostFsPath, "/proc")
 	entries, err := os.ReadDir(procDir)
 	if err != nil {
 		log.Fatalf("Error reading /proc directory: %v", err)
@@ -102,8 +102,8 @@ func install(cfgFilePath, execProviderPath string) {
 	// does the cmdline alreay contain both imageCredOptions?
 	if len(foundOptions) == len(imageCredOptions) {
 		// read config file and add our config
-		cfgFile := foundOptions["image-credential-provider-config"]
-		binDir := foundOptions["image-credential-provider-bin-dir"]
+		cfgFile := filepath.Join(hostFsPath, foundOptions["image-credential-provider-config"])
+		binDir := filepath.Join(hostFsPath, foundOptions["image-credential-provider-bin-dir"])
 		cfgData, err := ioutil.ReadFile(cfgFile)
 		if err != nil {
 			log.Fatalf("Error reading file: %v", err)

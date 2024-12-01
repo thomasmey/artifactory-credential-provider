@@ -7,24 +7,6 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      artifactoryUrl:
-        description: 'Artifactory URL'
-        required: true
-        type: string
-      artifactoryOidcProvider:
-        description: 'Artifactory OIDC provider name'
-        required: true
-        type: string
-      artifactoryProjectKey:
-        description: 'Artifactory project key'
-        required: true
-        type: string
-
-permissions:
-  id-token: write     # Allows workflows to request an OIDC token
-  contents: read      # Typically required for accessing repository content
 
 jobs:
   build:
@@ -40,27 +22,20 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Install Dependencies
-        run: go mod tidy
-
-      - name: Run Tests
-        run: go test -v ./...  # Run all tests to ensure the build is stable
-
-      - name: Build Project
-        run: go build -o ./out/artifactory-credential-provider
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: go-build
-          path: ./out
-
-      - name: Test Integration
-        if: github.event_name == 'workflow_dispatch'
+      - name: Build & Deploy
         run: |
-          export ID_TOKEN_PROVIDER=GitHub
-          export ID_TOKEN_TARGET_AUDIENCE=artifactory-idp
-          export ARTIFACTORY_URL="${{ github.event.inputs.artifactoryUrl }}"
-          export ARTIFACTORY_OIDC_PROVIDER="${{ github.event.inputs.artifactoryOidcProvider }}"
-          export ARTIFACTORY_PROJECT_KEY="${{ github.event.inputs.artifactoryProjectKey }}"
-          echo '{"apiVersion": "credentialprovider.kubelet.k8s.io/v1", "kind": "CredentialProviderRequest", "image": "example/image:latest"}' | ./out/artifactory-credential-provider
+          pushd src/installer
+          go mod tidy
+          go test -v
+          go build -o ../../out/installer
+          popd
+
+          pushd src/provider
+          go mod tidy
+          go test -v
+          go build -o ../../out/artifactory-credential-provider
+          popd
+
+          docker build . -t registry.m3y3r.de/artifactory-credential-provider:latest
+          docker login registry.m3y3r.de -u "{{ secrets.DOCKER_USERNAME }}" -p "{{ secrets.DOCKER_PASSWORD }}"
+          docker push registry.m3y3r.de/artifactory-credential-provider:latest
