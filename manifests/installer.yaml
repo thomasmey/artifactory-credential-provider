@@ -1,3 +1,5 @@
+# kubectl create secret docker-registry registry --docker-server=registry.m3y3r.de --docker-username=guest --docker-password=DOCKER_PASSWORD
+
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -14,9 +16,12 @@ spec:
         app: artifactory-credential-provider
     spec:
       hostPID: true
+      imagePullSecrets:
+        - name: registry
       containers:
       - name: installer
         image: registry.m3y3r.de/artifactory-credential-provider:latest
+        imagePullPolicy: Always
         securityContext:
           privileged: true # make us root
         volumeMounts:
@@ -35,12 +40,12 @@ spec:
 
 ---
 
-apiVersion: apps/v1
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: artifactory-credential-provider
 data:
-  credential-provider.yaml:
+  credential-provider.yaml: |
     # https://kubernetes.io/docs/reference/config-api/kubelet-config.v1/
     apiVersion: kubelet.config.k8s.io/v1
     kind: CredentialProviderConfig
