@@ -19,7 +19,9 @@ func (g GoogleMetadataProvider) GetIDToken(audience string) (string, error) {
 	// Add query parameters
 	params := url.Values{}
 	params.Add("audience", audience)
-	//params.Add("format", "full") - give 400 on GKE/GCE?
+	// gives more claims, e.g.:
+	//   {"aud":"artifactory-gcp","azp":"104479897743394244856","email":"405721773632-compute@developer.gserviceaccount.com","email_verified":true,"exp":1733256730,"google":{"compute_engine":{"instance_creation_timestamp":1733252450,"instance_id":"6140691338085198734","instance_name":"gke-cluster-1-default-pool-17bba0ee-w929","project_id":"gcp-tests-306319","project_number":405721773632,"zone":"europe-west10-a"}},"iat":1733253130,"iss":"https://accounts.google.com","sub":"104479897743394244856"}
+	params.Add("format", "full")
 
 	// Construct the full URL
 	fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
@@ -41,15 +43,15 @@ func (g GoogleMetadataProvider) GetIDToken(audience string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	// Check for non-200 status codes
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
 	// Read and return the response body (ID token)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("error reading response: %w", err)
+	}
+
+	// Check for non-200 status codes
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code: %d and body %s", resp.StatusCode, body)
 	}
 
 	return string(body), nil

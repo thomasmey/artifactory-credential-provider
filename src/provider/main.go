@@ -188,7 +188,6 @@ func main() {
 	// no username can be extracted
 	issuer, _ := jwt.Claims.GetIssuer()    // e.g. "jfac@01jbrxvxggt8ns0bhzvqr00q4a"
 	username, _ := jwt.Claims.GetSubject() // e.g. "jfac@01jbrxvxggt8ns0bhzvqr00q4a/users/docker"
-	log.Print("i und s ", issuer, username)
 	if strings.HasPrefix(username, issuer) {
 		username = strings.TrimPrefix(username, issuer)
 	}
