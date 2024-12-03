@@ -12,14 +12,14 @@ type GoogleMetadataProvider struct{}
 
 // https://cloud.google.com/docs/authentication/get-id-token
 // https://cloud.google.com/compute/docs/instances/verifying-instance-identity#request_signature
-func (g GoogleMetadataProvider) GetIDToken(audience, format string) (string, error) {
+func (g GoogleMetadataProvider) GetIDToken(audience string) (string, error) {
 	// Base URL for the Metadata Server
 	baseURL := "http://metadata/computeMetadata/v1/instance/service-accounts/default/identity"
 
 	// Add query parameters
 	params := url.Values{}
 	params.Add("audience", audience)
-	params.Add("format", format)
+	//params.Add("format", "full") - give 400 on GKE/GCE?
 
 	// Construct the full URL
 	fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())

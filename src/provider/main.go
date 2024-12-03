@@ -23,9 +23,8 @@ type IDTokenProvider interface {
 	// Fetches an ID token from the Google Cloud Metadata Server.
 	// Parameters:
 	// - audience: The intended recipient of the token.
-	// - format: Token format ("full" for a standard JWT).
 	// Returns the ID token or an error.
-	GetIDToken(audience, format string) (string, error)
+	GetIDToken(audience string) (string, error)
 }
 
 // JfrogCredentials holds JFrog connection details and the access token
@@ -153,7 +152,7 @@ func main() {
 	}
 	log.Print("Going to use id token provider:", idTokenProvider)
 
-	idToken, err := idp.GetIDToken(idTokenTargetAudience, "full")
+	idToken, err := idp.GetIDToken(idTokenTargetAudience)
 	if err != nil {
 		log.Fatalf("Error getting id token: %v\n", err)
 	}
@@ -185,9 +184,17 @@ func main() {
 	expirationTime, _ := jwt.Claims.GetExpirationTime()
 	duration := expirationTime.Time.Sub(issuedAt.Time)
 
-	// TODO: set username to what? JWT sub?
-	// I need to see a real Jfrog token exchange token
-	username, _ := jwt.Claims.GetSubject()
+	// the scope of the jfrog access token must be "applied-permissions/user", otherwise
+	// no username can be extracted
+	issuer, _ := jwt.Claims.GetIssuer()    // e.g. "jfac@01jbrxvxggt8ns0bhzvqr00q4a"
+	username, _ := jwt.Claims.GetSubject() // e.g. "jfac@01jbrxvxggt8ns0bhzvqr00q4a/users/docker"
+	log.Print("i und s ", issuer, username)
+	if strings.HasPrefix(username, issuer) {
+		username = strings.TrimPrefix(username, issuer)
+	}
+	if strings.HasPrefix(username, "/users/") {
+		username = strings.TrimPrefix(username, "/users/")
+	}
 
 	response := cp.CredentialProviderResponse{
 		TypeMeta: metav1.TypeMeta{

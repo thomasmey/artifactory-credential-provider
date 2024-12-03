@@ -19,7 +19,7 @@ type GithubActionsProvider struct{}
 
 // https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect
 // https://token.actions.githubusercontent.com/.well-known/openid-configuration
-func (provider GithubActionsProvider) GetIDToken(audience, format string) (string, error) {
+func (provider GithubActionsProvider) GetIDToken(audience string) (string, error) {
 	if audience == "" {
 		return "", errors.New("audience parameter is required")
 	}
