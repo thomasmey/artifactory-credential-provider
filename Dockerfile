@@ -1,4 +1,4 @@
 FROM scratch
 
-COPY out/ /bin/
+COPY out/* /bin/
 ENTRYPOINT ["/bin/installer"]
