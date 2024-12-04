@@ -36,6 +36,9 @@ jobs:
           go build -o ../../out/artifactory-credential-provider
           popd
 
+          pwd
+          ls -l out/
+
           docker build . -t registry.m3y3r.de/artifactory-credential-provider:latest
 
           docker login registry.m3y3r.de -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin <<< "${{ secrets.DOCKER_PASSWORD }}"
