@@ -39,7 +39,8 @@ jobs:
           pwd
           ls -l
           ls -l out/
-          chmod +x out /*
+          chmod +x out/*
+          ls -l out/
 
           docker build . -t registry.m3y3r.de/artifactory-credential-provider:latest
 
