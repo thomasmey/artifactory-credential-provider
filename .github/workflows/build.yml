@@ -24,6 +24,8 @@ jobs:
 
       - name: Build & Deploy
         run: |
+          export CGO_ENABLED=0
+
           pushd src/installer
           go mod tidy
           go test -v
@@ -35,12 +37,6 @@ jobs:
           go test -v
           go build -o ../../out/artifactory-credential-provider
           popd
-
-          pwd
-          ls -l
-          ls -l out/
-          chmod +x out/*
-          ls -l out/
 
           docker build . -t registry.m3y3r.de/artifactory-credential-provider:latest
 
