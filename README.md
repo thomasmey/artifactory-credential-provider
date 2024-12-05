@@ -36,6 +36,31 @@ Add an new identity mapping:
 - Service:       "artifactory"
 - Token Expiry:  "10"
 
+The GCP ID token has currently those claims:
+
+		{
+			"aud": "artifactory",
+			"azp": "104479897743394244856",
+			"email": "405721773632-compute@developer.gserviceaccount.com",
+			"email_verified": true,
+			"exp": 1733174717,
+			"google": {
+				"compute_engine": {
+					"instance_creation_timestamp": 1733170619,
+					"instance_id": "4633441276440849237",
+					"instance_name": "gke-cluster-1-default-pool-0ed40044-cddg",
+					"project_id": "gcp-tests-12345",
+					"project_number": 23423679787632,
+					"zone": "europe-west10-a"
+				}
+			},
+			"iat": 1733171117,
+			"iss": "https://accounts.google.com",
+			"sub": "104479897743394244856"
+		}
+
+Any of those claims can be used in your ID mapping, so you could for example an ID mapping based on your project_id.
+
 # Test without registry secret
 
 Run `kubectl run pulltest --image=trialp6kynx.jfrog.io/docker-trial/fedora:latest -t -i --rm=true`
