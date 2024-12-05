@@ -8,9 +8,9 @@ This provider does fetch an ID token from Google's metadata server on GCE, does 
 ## GKE
 
 1. Get cluster credentials `gcloud container clusters get-credentials --zone europe-west10-a cluster-1`
-2. Create registry secret `kubectl create secret docker-registry registry --docker-server=registry.m3y3r.de --docker-username=guest --docker-password=ASKME`
+2. Create registry secret `kubectl create secret docker-registry registry --docker-server=registry.m3y3r.de --docker-username=acr --docker-password=gxc8ivHAZRZtk3Uj9vMW`
 3. Modify manifests/installer.yaml to your needs
-4. Install DaemonSet to your cluster with `kubectl apply -f installer.yaml`
+4. Install DaemonSet to your cluster with `kubectl apply -f manifests/installer.yaml`
 
 # Configuring Artifactory for usage with GCP GKE
 

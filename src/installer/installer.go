@@ -156,6 +156,12 @@ func install(cfgFilePath, execProviderPath, hostFsPath string) {
 			log.Fatal(err)
 		}
 
+		// ensure it's executable
+		err = os.Chmod(dstPath, 0755)
+		if err != nil {
+			log.Fatal("Error setting executable permission:", err)
+		}
+
 		log.Print("Going to restart kubelet")
 		process, _ := os.FindProcess(kubeletPid)
 		process.Signal(syscall.SIGTERM)
