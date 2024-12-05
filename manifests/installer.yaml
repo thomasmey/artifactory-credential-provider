@@ -18,7 +18,7 @@ spec:
       hostPID: true
       imagePullSecrets:
         - name: registry
-      restartPolicy: Never
+      restartPolicy: Always
       containers:
       - name: installer
         image: registry.m3y3r.de/artifactory-credential-provider:latest

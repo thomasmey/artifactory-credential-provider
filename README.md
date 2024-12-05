@@ -14,4 +14,14 @@ This provider does fetch an ID token from Google's metadata server on GCE, does 
 
 # Configuring Artifactory for usage with GCP GKE
 
-OpenID Provider URL https://accounts.google.com/.well-known/openid-configuration
+GCP IAM OpenID config is available here https://accounts.google.com/.well-known/openid-configuration
+
+In Artifactory create an new "OIDC Integration":
+- Provider Name: "gpc"
+- Provider Type: "Generic OpenID Connect"
+- Provider URL:  "https://accounts.google.com"
+- Audience:      "artifactory-idp"
+- Token Issuer:  "https://accounts.google.com"
+
+Add an new identity mapping:
+

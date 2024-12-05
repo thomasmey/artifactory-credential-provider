@@ -25,8 +25,10 @@ func main() {
 	var hostFsPath = flag.String("hostfs", "/host", "Path to hostfs mount")
 	flag.Parse()
 
-	log.Print("Install Mode - Try to install to node")
+	log.Print("Install to credential provider to node")
 	install(*cfgFilePath, *execProviderPath, *hostFsPath)
+	log.Print("Finished, wait forever, restartPolicy: Never is what we want")
+	select {} // Blocks forever
 }
 
 func install(cfgFilePath, execProviderPath, hostFsPath string) {
@@ -49,8 +51,7 @@ func install(cfgFilePath, execProviderPath, hostFsPath string) {
 			fp := filepath.Join(procDir, entry.Name(), "cmdline")
 			cmdline, err := ioutil.ReadFile(fp)
 			if err != nil {
-				log.Printf("Error reading file: %v", err)
-				return
+				log.Fatalf("Error reading file: %v", err)
 			}
 
 			ca := strings.Split(string(cmdline), "\x00")
