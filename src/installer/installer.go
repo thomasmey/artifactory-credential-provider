@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -28,7 +29,9 @@ func main() {
 	log.Print("Install to credential provider to node")
 	install(*cfgFilePath, *execProviderPath, *hostFsPath)
 	log.Print("Finished, wait forever, restartPolicy: Never is what we want")
-	select {} // Blocks forever
+	for {
+		time.Sleep(time.Hour) // Sleep in hourly increments forever
+	}
 }
 
 func install(cfgFilePath, execProviderPath, hostFsPath string) {
